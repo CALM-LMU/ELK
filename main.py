@@ -6,6 +6,7 @@ import os
 import re
 import json
 import napari
+import argparse
 import numpy as np
 import pandas as pd
 from glob import glob
@@ -204,20 +205,26 @@ def label_image(path):
     return 
 
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', type=str, help='The path to the images you want to label')
+    parser.add_argument('n_classes', type=int, help='the total amount of classes')
+    parser.add_argument('--namelist', nargs='+', default=[], help='Optional list of class tags')
+    args = parser.parse_args()
 
-#########################
-# GUI
-#########################
+    path = args.path
+    class_n = args.n_classes
+    namelist = args.namelist
 
-counter = 0
-loaded = False
-imglist = []
-namelist = ['mating', 'budding', 'mating_2', 'mating_bud']
-colorlist = ['#FF0011', '#0000FF', '#FFB60B', '#45B65B']
+    counter = 0
+    loaded = False
+    imglist = []
+    namelist = ['mating', 'budding', 'mating_2', 'mating_bud']
+    colorlist = ['#FF0011', '#0000FF', '#FFB60B', '#45B65B']
 
-style = {'description_width': 'initial'}
+    style = {'description_width': 'initial'}
 
-imglist = []
-viewer = napari.Viewer()
-set_hotkeys()
-napari.run()
+    imglist = []
+    viewer = napari.Viewer()
+    set_hotkeys()
+    napari.run()
