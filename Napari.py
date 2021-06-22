@@ -217,25 +217,7 @@ colorlist = ['#FF0011', '#0000FF', '#FFB60B', '#45B65B']
 
 style = {'description_width': 'initial'}
 
-
-# from ipywidgets import Layout, HBox, VBox, Box, Checkbox, Text, BoundedFloatText, Button, FloatProgress, Label, Dropdown, Tab, Layout
-# from IPython.display import display
-
-# # Tab 1: basic settings
-
-# folder = Text(description='Image folder', style=style)
-
-# init = Button(description='Load Images!')
-# init.on_click(get_imglist)
-
-# go = Button(description='Next Image!')
-# go.on_click(next_image)
-
-# tab1 = VBox([folder, init, go])
-
-# display(tab1)
-
-
 imglist = []
 viewer = napari.Viewer()
 set_hotkeys()
+napari.run()
