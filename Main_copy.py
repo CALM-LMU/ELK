@@ -107,10 +107,10 @@ def save_labels():
     global imglist
     global namelist
          
-    mask = viewer.layers['single_cell'].data
+    mask = viewer.layers[namelist[0]].data
     
     things = []
-    for cls, name in enumerate(namelist):
+    for cls, name in enumerate(namelist[1:]):
         data = viewer.layers[name].data
         
         for sample in data:
@@ -122,10 +122,10 @@ def save_labels():
             
     tmpres = {'things': things}
 
-    imsave(imglist[counter].replace('.tif', '_mask.tif').replace('train', 'train\\corrected'), mask)
-    os.rename(imglist[counter], imglist[counter].replace('train', 'train\\corrected'))
-    with open(imglist[counter].replace('.tif', '_detections.json').replace('train', 'train\\corrected'), 'w') as file:
-        json.dump(tmpres, file)
+#     imsave(imglist[counter].replace('.tif', '_mask.tif').replace('train', 'train\\corrected'), mask)
+#     os.rename(imglist[counter], imglist[counter].replace('train', 'train\\corrected'))
+#     with open(imglist[counter].replace('.tif', '_detections.json').replace('train', 'train\\corrected'), 'w') as file:
+#         json.dump(tmpres, file)
         
 def label_image():  
     global viewer
@@ -136,17 +136,24 @@ def label_image():
             
     image = imread(imglist[counter])
     mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
+    
+    try:
+        mask
+    except NameError:
+        mask_exists = False
+    else:
+        mask_exists = True
         
     viewer.add_image(image)
     
     colorlist = cm.get_cmap('viridis', class_n)
+    
+    if mask_exists == True:
+        viewer.add_labels(mask[:,:], opacity=0.3, name='mask', visible=True)
         
     for n in range(class_n):
-        x = colorlist(n)
-        y = x[:3]
-        viewer.add_labels(mask[:,:], opacity=0.3, name=namelist[n], visible=True)
-        viewer.add_shapes(None, shape_type='path', edge_width=5,  face_color=y, opacity=0.5, name=namelist[n], visible=True)
-    viewer.active_layer = viewer.layers[-1]
+        viewer.add_shapes(None, shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+    viewer.layers.selection.active = viewer.layers[-1]
     
     return 
 
@@ -156,15 +163,17 @@ if __name__ == '__main__':
     parser.add_argument('path', type=str, help='The path to the images you want to label')
     parser.add_argument('n_classes', type=int, help='the total amount of classes')
     parser.add_argument('--mask', nargs='+', default=[], help='Add an empty mask')
+    parser.add_argument('--namelist', nargs='+', default='', help='Optional list of class tags')
     args = parser.parse_args()
 
     path = args.path
     class_n = args.n_classes
-    
-    emp_c = [''] * class_n
-    parser.add_argument('--namelist', nargs='+', default=emp_c, help='Optional list of class tags')
-    args = parser.parse_args()
-    namelist = args.namelist
+    if args.namelist == '':
+        namelist = list(range(class_n))
+    else:
+        namelist = args.namelist
+        
+    namelist = [str(x) for x in namelist]
 
     imglist = get_imglist(path)
     
