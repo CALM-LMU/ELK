@@ -12,7 +12,8 @@ import pandas as pd
 from glob import glob
 from skimage.io import imread, imsave
 from napari.viewer import Viewer
-
+from matplotlib import cm
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from skimage.measure import regionprops
 
 #########################
@@ -50,7 +51,7 @@ def next_image(btn=None):
         viewer.reset_view()
     
     if counter < len(imglist):
-        label_image(folder.value)
+        label_image()
         loaded = True
         
 # def save_labels():
@@ -126,7 +127,7 @@ def save_labels():
     with open(imglist[counter].replace('.tif', '_detections.json').replace('train', 'train\\corrected'), 'w') as file:
         json.dump(tmpres, file)
         
-def label_image(path):  
+def label_image():  
     global viewer
     global counter
     global skip
@@ -137,18 +138,14 @@ def label_image(path):
     mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
         
     viewer.add_image(image)
+    
+    colorlist = cm.get_cmap('viridis', class_n)
         
-#     for n in range(class_n):
-#         #if n == 0:
-#         viewer.add_labels(mask[:,:,n], opacity=0.3, name=namelist[n], visible=True)
-#         #else:
-    
-    viewer.add_labels(mask, opacity=0.3, name='single_cell', visible=True)
-    viewer.add_shapes(None, shape_type='path', edge_width=5, edge_color=colorlist[0], face_color=colorlist[0], opacity=0.5, name=namelist[0], visible=True)
-    viewer.add_shapes(None, shape_type='path', edge_width=5, edge_color=colorlist[1], face_color=colorlist[1], opacity=0.5, name=namelist[1], visible=True)
-    viewer.add_shapes(None, shape_type='path', edge_width=5, edge_color=colorlist[1], face_color=colorlist[2], opacity=0.5, name=namelist[2], visible=True)
-    viewer.add_shapes(None, shape_type='path', edge_width=5, edge_color=colorlist[1], face_color=colorlist[3], opacity=0.5, name=namelist[3], visible=True)
-    
+    for n in range(class_n):
+        x = colorlist(n)
+        y = x[:3]
+        viewer.add_labels(mask[:,:], opacity=0.3, name=namelist[n], visible=True)
+        viewer.add_shapes(None, shape_type='path', edge_width=5,  face_color=y, opacity=0.5, name=namelist[n], visible=True)
     viewer.active_layer = viewer.layers[-1]
     
     return 
@@ -158,19 +155,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str, help='The path to the images you want to label')
     parser.add_argument('n_classes', type=int, help='the total amount of classes')
-    parser.add_argument('--namelist', nargs='+', default=[], help='Optional list of class tags')
     parser.add_argument('--mask', nargs='+', default=[], help='Add an empty mask')
     args = parser.parse_args()
 
     path = args.path
     class_n = args.n_classes
+    
+    emp_c = [''] * class_n
+    parser.add_argument('--namelist', nargs='+', default=emp_c, help='Optional list of class tags')
+    args = parser.parse_args()
     namelist = args.namelist
 
-    get_imglist(path)
+    imglist = get_imglist(path)
     
     counter = 0
     loaded = False
-    colorlist = ['#FF0011', '#0000FF', '#FFB60B', '#45B65B']
 
     style = {'description_width': 'initial'}
 
