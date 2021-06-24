@@ -63,7 +63,7 @@ def save_labels():
     if boxes:
         mask = viewer.layers['mask'].data
         stack = []
-        for n, name in enumerate(namelist[1:]):
+        for n, name in enumerate(namelist):
             
             data = viewer.layers[name].data
 
@@ -99,7 +99,7 @@ def save_labels():
         mask = viewer.layers['mask'].data
 
         things = []
-        for cls, name in enumerate(namelist[1:]):
+        for cls, name in enumerate(namelist):
             data = viewer.layers[name].data
 
             for sample in data:
