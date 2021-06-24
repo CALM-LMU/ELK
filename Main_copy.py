@@ -93,6 +93,8 @@ def save_labels():
                 mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
+#         with open(imglist[counter].replace('.tif', '_detections.json'), 'w') as file:
+#             json.dump(sortidx, file)
 
     else:
          
@@ -125,6 +127,7 @@ def label_image():
             
     image = imread(imglist[counter])
     mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
+    print(imglist[counter])
     
     try:
         mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
@@ -155,6 +158,9 @@ def label_image():
             stuff.append(thing['points'])
         elif thing['class'] == 3:
             stuff.append(thing['points'])
+    if stuff == []:
+        stuff = None
+    print(stuff)
     viewer.add_shapes(stuff, shape_type='path', edge_width=5, opacity=0.5, name='old_marks', visible=True)
     
     return 
@@ -178,8 +184,6 @@ if __name__ == '__main__':
     boxes = args.boxes
     
     imglist = get_imglist(path)
-    
-    print(boxes)
     
     counter = 0
     loaded = False
