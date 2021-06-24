@@ -77,10 +77,10 @@ def save_labels():
                 y2 = int(sample[2][0])
 
                 try:
-                    rps = regionprops(corr_mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
+                    rps = regionprops(mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
                 except:
                     print(sample)
-                    print(corr_mask.shape)
+                    print(mask.shape)
                     continue
 
                 areas = []
@@ -89,10 +89,10 @@ def save_labels():
 
                 sortidx = np.argsort(areas)
 
-                corr_mask[:,:,-2][corr_mask[:,:,0] == rps[sortidx[0]].label] = np.max(corr_mask[:,:,-2]) + 1
-                corr_mask[:,:,-1][corr_mask[:,:,0] == rps[sortidx[1]].label] = np.max(corr_mask[:,:,-1]) + 1
+                mask[:,:,-2][mask[:,:,0] == rps[sortidx[0]].label] = np.max(mask[:,:,-2]) + 1
+                mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
 
-        imsave(imglist[counter].replace('.tif', '_mask.tif'), corr_mask)
+        imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
 
     else:
          
@@ -112,6 +112,8 @@ def save_labels():
         tmpres = {'things': things}
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
+        with open(imglist[counter].replace('.tif', '_detections.json'), 'w') as file:
+            json.dump(tmpres, file)
         
 def label_image():  
     global viewer
@@ -145,6 +147,16 @@ def label_image():
             
     viewer.layers.selection.active = viewer.layers[-1]
     
+    stuff = []
+    with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
+        o = json.load(file)
+    for thing in o['things']:
+        if thing['class'] == 1:
+            stuff.append(thing['points'])
+        elif thing['class'] == 3:
+            stuff.append(thing['points'])
+    viewer.add_shapes(stuff, shape_type='path', edge_width=5, opacity=0.5, name='old_marks', visible=True)
+    
     return 
 
 
@@ -152,7 +164,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str, help='The path to the images you want to label')
     parser.add_argument('n_classes', type=int, help='the total amount of classes')
-    parser.add_argument('--boxes', type=bool, help='Add an empty mask')
+    parser.add_argument('--boxes', type=bool,default= False, help='Add an empty mask')
     parser.add_argument('--namelist', nargs='+', default='', help='Optional list of class tags')
     args = parser.parse_args()
 
