@@ -133,18 +133,14 @@ def label_image():
             prelabels.append([])
         with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
             jsonfile = json.load(file)
-        for thing in jsonfile['things']:
-            for n in range(len(namelist)):
+        for n in range(len(namelist)):
+            for thing in jsonfile['things']:            
                 if thing['class'] == n:
                     prelabels[n].append(thing['points'])
         for n in range(len(prelabels)):
             if prelabels[n] == []:
                 prelabels[n] = None
-        
-        print(jsonfile)
 
-        for n in range(len(prelabels)):
-            viewer.add_shapes(prelabels[n], shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
     except:
         print('no json file found')
     
@@ -165,7 +161,7 @@ def label_image():
             viewer.add_shapes(None, shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
     else:
         for n in range(class_n):
-            viewer.add_shapes(None, shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+            viewer.add_shapes(prelabels[n], shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
             
     viewer.layers.selection.active = viewer.layers[-1]
         
