@@ -93,8 +93,6 @@ def save_labels():
                 mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
-#         with open(imglist[counter].replace('.tif', '_detections.json'), 'w') as file:
-#             json.dump(sortidx, file)
 
     else:
          
