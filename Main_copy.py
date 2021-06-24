@@ -53,79 +53,70 @@ def next_image(btn=None):
     if counter < len(imglist):
         label_image()
         loaded = True
-        
-# def save_labels():
-#     global counter
-#     global imglist
-#     global namelist
-         
-#     stack = []
-#     for n, name in enumerate(namelist):
-#         if name == 'budding':
-#             continue
-            
-#         data = viewer.layers[name].data
-        
-#         data = np.expand_dims(data, axis=-1)
-#         stack.append(data)
-        
-#     stack.append(np.zeros_like(data))
-#     stack.append(np.zeros_like(data))
-    
-#     corr_mask = np.concatenate(stack, axis=-1)
-#     corr_mask = corr_mask.astype(np.uint16)
-    
-#     data = viewer.layers['budding'].data
-    
-#     for sample in data:
-#         x1 = int(sample[0][1])
-#         y1 = int(sample[0][0])
-#         x2 = int(sample[2][1])
-#         y2 = int(sample[2][0])
-        
-#         try:
-#             rps = regionprops(corr_mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
-#         except:
-#             print(sample)
-#             print(corr_mask.shape)
-#             continue
-        
-#         areas = []
-#         for rp in rps:
-#             areas.append(rp.area)
-            
-#         sortidx = np.argsort(areas)
-        
-#         corr_mask[:,:,-2][corr_mask[:,:,0] == rps[sortidx[0]].label] = np.max(corr_mask[:,:,-2]) + 1
-#         corr_mask[:,:,-1][corr_mask[:,:,0] == rps[sortidx[1]].label] = np.max(corr_mask[:,:,-1]) + 1
-
-#     imsave(imglist[counter].replace('.tif', '_mask.tif').replace('train', 'train\\corrected'), corr_mask)
-#     os.rename(imglist[counter], imglist[counter].replace('train', 'train\\corrected'))
 
 def save_labels():
     global counter
     global imglist
     global namelist
-         
-    mask = viewer.layers[namelist[0]].data
     
-    things = []
-    for cls, name in enumerate(namelist[1:]):
-        data = viewer.layers[name].data
-        
-        for sample in data:
-            samplelist = list(sample)
-            samplelist = [list(x) for x in samplelist]
+    if boxes:
+        stack = []
+        for n, name in enumerate(namelist):
             
-            thing = {'points': samplelist, 'class': cls+1}
-            things.append(thing)
-            
-    tmpres = {'things': things}
+            data = viewer.layers[name].data
 
-#     imsave(imglist[counter].replace('.tif', '_mask.tif').replace('train', 'train\\corrected'), mask)
-#     os.rename(imglist[counter], imglist[counter].replace('train', 'train\\corrected'))
-#     with open(imglist[counter].replace('.tif', '_detections.json').replace('train', 'train\\corrected'), 'w') as file:
-#         json.dump(tmpres, file)
+            data = np.expand_dims(data, axis=-1)
+            stack.append(data)
+
+        stack.append(np.zeros_like(data))
+        stack.append(np.zeros_like(data))
+
+        corr_mask = np.concatenate(stack, axis=-1)
+        corr_mask = corr_mask.astype(np.uint16)
+
+
+        for sample in data:
+            x1 = int(sample[0][1])
+            y1 = int(sample[0][0])
+            x2 = int(sample[2][1])
+            y2 = int(sample[2][0])
+
+            try:
+                rps = regionprops(corr_mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
+            except:
+                print(sample)
+                print(corr_mask.shape)
+                continue
+
+            areas = []
+            for rp in rps:
+                areas.append(rp.area)
+
+            sortidx = np.argsort(areas)
+
+            corr_mask[:,:,-2][corr_mask[:,:,0] == rps[sortidx[0]].label] = np.max(corr_mask[:,:,-2]) + 1
+            corr_mask[:,:,-1][corr_mask[:,:,0] == rps[sortidx[1]].label] = np.max(corr_mask[:,:,-1]) + 1
+
+        imsave(imglist[counter].replace('.tif', '_mask.tif'), corr_mask)
+
+    else:
+         
+        mask = viewer.layers['mask'].data
+
+        things = []
+        for cls, name in enumerate(namelist[1:]):
+            data = viewer.layers[name].data
+
+            for sample in data:
+                samplelist = list(sample)
+                samplelist = [list(x) for x in samplelist]
+
+                thing = {'points': samplelist, 'class': cls+1}
+                things.append(thing)
+
+        tmpres = {'things': things}
+
+        imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
         
 def label_image():  
     global viewer
@@ -138,21 +129,24 @@ def label_image():
     mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
     
     try:
-        mask
-    except NameError:
-        mask_exists = False
-    else:
-        mask_exists = True
+        mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
+    except:
+        mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+        print('no mask found')
         
     viewer.add_image(image)
     
     colorlist = cm.get_cmap('viridis', class_n)
     
-    if mask_exists == True:
-        viewer.add_labels(mask[:,:], opacity=0.3, name='mask', visible=True)
-        
-    for n in range(class_n):
-        viewer.add_shapes(None, shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+    viewer.add_labels(mask[:,:], opacity=0.3, name='mask', visible=True)
+    
+    if boxes:
+        for n in range(class_n):
+            viewer.add_shapes(None, shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+    else:
+        for n in range(class_n):
+            viewer.add_shapes(None, shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+            
     viewer.layers.selection.active = viewer.layers[-1]
     
     return 
@@ -162,7 +156,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str, help='The path to the images you want to label')
     parser.add_argument('n_classes', type=int, help='the total amount of classes')
-    parser.add_argument('--mask', nargs='+', default=[], help='Add an empty mask')
+    parser.add_argument('--boxes', type=bool, nargs='+', default=[], help='Add an empty mask')
     parser.add_argument('--namelist', nargs='+', default='', help='Optional list of class tags')
     args = parser.parse_args()
 
@@ -172,8 +166,8 @@ if __name__ == '__main__':
         namelist = list(range(class_n))
     else:
         namelist = args.namelist
-        
     namelist = [str(x) for x in namelist]
+    boxes = args.boxes
 
     imglist = get_imglist(path)
     
