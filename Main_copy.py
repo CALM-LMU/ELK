@@ -58,44 +58,39 @@ def save_labels():
     global counter
     global imglist
     global namelist
+    global boxes
     
     if boxes:
+        mask = viewer.layers['mask'].data
         stack = []
-        for n, name in enumerate(namelist):
+        for n, name in enumerate(namelist[1:]):
             
             data = viewer.layers[name].data
 
             data = np.expand_dims(data, axis=-1)
             stack.append(data)
 
-        stack.append(np.zeros_like(data))
-        stack.append(np.zeros_like(data))
+            for sample in data:
+                x1 = int(sample[0][1])
+                y1 = int(sample[0][0])
+                x2 = int(sample[2][1])
+                y2 = int(sample[2][0])
 
-        corr_mask = np.concatenate(stack, axis=-1)
-        corr_mask = corr_mask.astype(np.uint16)
+                try:
+                    rps = regionprops(corr_mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
+                except:
+                    print(sample)
+                    print(corr_mask.shape)
+                    continue
 
+                areas = []
+                for rp in rps:
+                    areas.append(rp.area)
 
-        for sample in data:
-            x1 = int(sample[0][1])
-            y1 = int(sample[0][0])
-            x2 = int(sample[2][1])
-            y2 = int(sample[2][0])
+                sortidx = np.argsort(areas)
 
-            try:
-                rps = regionprops(corr_mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
-            except:
-                print(sample)
-                print(corr_mask.shape)
-                continue
-
-            areas = []
-            for rp in rps:
-                areas.append(rp.area)
-
-            sortidx = np.argsort(areas)
-
-            corr_mask[:,:,-2][corr_mask[:,:,0] == rps[sortidx[0]].label] = np.max(corr_mask[:,:,-2]) + 1
-            corr_mask[:,:,-1][corr_mask[:,:,0] == rps[sortidx[1]].label] = np.max(corr_mask[:,:,-1]) + 1
+                corr_mask[:,:,-2][corr_mask[:,:,0] == rps[sortidx[0]].label] = np.max(corr_mask[:,:,-2]) + 1
+                corr_mask[:,:,-1][corr_mask[:,:,0] == rps[sortidx[1]].label] = np.max(corr_mask[:,:,-1]) + 1
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), corr_mask)
 
@@ -124,6 +119,7 @@ def label_image():
     global skip
     global namelist
     global colorlist
+    global boxes
             
     image = imread(imglist[counter])
     mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
@@ -156,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str, help='The path to the images you want to label')
     parser.add_argument('n_classes', type=int, help='the total amount of classes')
-    parser.add_argument('--boxes', type=bool, nargs='+', default=[], help='Add an empty mask')
+    parser.add_argument('--boxes', type=bool, help='Add an empty mask')
     parser.add_argument('--namelist', nargs='+', default='', help='Optional list of class tags')
     args = parser.parse_args()
 
@@ -168,8 +164,10 @@ if __name__ == '__main__':
         namelist = args.namelist
     namelist = [str(x) for x in namelist]
     boxes = args.boxes
-
+    
     imglist = get_imglist(path)
+    
+    print(boxes)
     
     counter = 0
     loaded = False
