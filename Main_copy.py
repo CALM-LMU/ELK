@@ -106,7 +106,7 @@ def save_labels():
                 samplelist = list(sample)
                 samplelist = [list(x) for x in samplelist]
 
-                thing = {'points': samplelist, 'class': cls+1}
+                thing = {'points': samplelist, 'class': cls}
                 things.append(thing)
 
         tmpres = {'things': things}
