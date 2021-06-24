@@ -128,6 +128,27 @@ def label_image():
     print(imglist[counter])
     
     try:
+        prelabels = []
+        for n in range(len(namelist)):
+            prelabels.append([])
+        with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
+            jsonfile = json.load(file)
+        for thing in jsonfile['things']:
+            for n in range(len(namelist)):
+                if thing['class'] == n:
+                    prelabels[n].append(thing['points'])
+        for n in range(len(prelabels)):
+            if prelabels[n] == []:
+                prelabels[n] = None
+        
+        print(jsonfile)
+
+        for n in range(len(prelabels)):
+            viewer.add_shapes(prelabels[n], shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+    except:
+        print('no json file found')
+    
+    try:
         mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
     except:
         mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
@@ -147,20 +168,7 @@ def label_image():
             viewer.add_shapes(None, shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
             
     viewer.layers.selection.active = viewer.layers[-1]
-    
-    stuff = []
-    with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
-        o = json.load(file)
-    for thing in o['things']:
-        if thing['class'] == 1:
-            stuff.append(thing['points'])
-        elif thing['class'] == 3:
-            stuff.append(thing['points'])
-    if stuff == []:
-        stuff = None
-    print(stuff)
-    viewer.add_shapes(stuff, shape_type='path', edge_width=5, opacity=0.5, name='old_marks', visible=True)
-    
+        
     return 
 
 
