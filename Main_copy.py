@@ -67,15 +67,17 @@ def save_labels():
         for n, name in enumerate(namelist[1:]):
             data = viewer.layers[name].data
 
-        for sample in data:
-            dic['category_id'].append(n+1)
-            dic['x1'].append(sample[0][1])
-            dic['y1'].append(sample[0][0])
-            dic['x2'].append(sample[2][1])
-            dic['y2'].append(sample[2][0])
+            for sample in data:
+                dic['category_id'].append(n+1)
+                dic['x1'].append(sample[0][1])
+                dic['y1'].append(sample[0][0])
+                dic['x2'].append(sample[2][1])
+                dic['y2'].append(sample[2][0])
 
         df = pd.DataFrame(dic)
         df.to_csv(os.path.splitext(imglist[counter-1])[0] + '_corrected.csv')
+        
+        print(dic)
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
 
