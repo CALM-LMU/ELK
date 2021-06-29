@@ -75,9 +75,7 @@ def save_labels():
                 dic['y2'].append(sample[2][0])
 
         df = pd.DataFrame(dic)
-        df.to_csv(os.path.splitext(imglist[counter-1])[0] + '_corrected.csv')
-        
-        print(dic)
+        df.to_csv(os.path.splitext(imglist[counter])[0] + '_corrected.csv') # counter -1 ??
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
 
@@ -106,9 +104,12 @@ def label_image():
     global viewer
     global counter
     global skip
+    global imglist
     global namelist
     global colorlist
     global box_t
+
+    print(namelist[0])
             
     image = imread(imglist[counter])
     
