@@ -58,42 +58,10 @@ def save_labels():
     global counter
     global imglist
     global namelist
-    global boxes
-    
-    if boxes:
-        mask = viewer.layers['mask'].data
-#         stack = []
-#         for n, name in enumerate(namelist[1:]):
-            
-#             data = viewer.layers[name].data
+    global box_t
 
-#             data = np.expand_dims(data, axis=-1)
-#             stack.append(data)
-#             print(data)
-
-#             for sample in data:
-#                 x1 = int(sample[0][1])
-#                 y1 = int(sample[0][0])
-#                 x2 = int(sample[2][1])
-#                 y2 = int(sample[2][0])
-
-#                 try:
-#                     rps = regionprops(mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
-#                 except:
-#                     print(sample)
-#                     print(mask.shape)
-#                     continue
-
-#                 areas = []
-#                 for rp in rps:
-#                     areas.append(rp.area)
-
-#                 sortidx = np.argsort(areas)
-
-#                 mask[:,:,-2][mask[:,:,0] == rps[sortidx[0]].label] = np.max(mask[:,:,-2]) + 1
-#                 mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
-                
-                
+    if box_t:
+        mask = viewer.layers['mask'].data  
         dic = {'category_id':[], 'x1':[], 'y1':[], 'x2':[], 'y2':[]}
 
         for n, name in enumerate(namelist[1:]):
@@ -138,10 +106,9 @@ def label_image():
     global skip
     global namelist
     global colorlist
-    global boxes
+    global box_t
             
     image = imread(imglist[counter])
-    print(imglist[counter])
     
     prelabels = []
     for n in range(len(namelist)):
@@ -159,7 +126,7 @@ def label_image():
     
     viewer.add_labels(mask[:,:], opacity=0.3, name='mask', visible=True)
     
-    if boxes:
+    if box_t:
         try:
             targets = pd.read_csv(os.path.splitext(imglist[counter])[0] + '_corrected.csv')
 
@@ -176,8 +143,6 @@ def label_image():
             for n in range(len(prelabels)):
                 if prelabels[n] == []:
                     prelabels[n] = None
-                    
-            print(prelabels)
 
             for n in range(len(namelist)):
                 viewer.add_shapes(prelabels[n], shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
@@ -226,7 +191,7 @@ if __name__ == '__main__':
     else:
         namelist = args.namelist
     namelist = [str(x) for x in namelist]
-    boxes = args.boxes
+    box_t = args.boxes
     
     imglist = get_imglist(path)
     
