@@ -63,6 +63,8 @@ def save_labels():
     if box_t:
         mask = viewer.layers['mask'].data  
         dic = {'category_id':[], 'x1':[], 'y1':[], 'x2':[], 'y2':[]}
+        
+        print(namelist)
 
         for n, name in enumerate(namelist[1:]):
             data = viewer.layers[name].data
@@ -141,7 +143,7 @@ def label_image():
                 labels.append(row.category_id)
 
             for n,box in enumerate(boxes):
-                prelabels[labels[n]-1].append([[box[1], box[0]], [box[3], box[0]], [box[3], box[2]], [box[1], box[2]]])
+                prelabels[labels[n]].append([[box[1], box[0]], [box[3], box[0]], [box[3], box[2]], [box[1], box[2]]])
 
             for n in range(len(prelabels)):
                 if prelabels[n] == []:
