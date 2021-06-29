@@ -62,35 +62,52 @@ def save_labels():
     
     if boxes:
         mask = viewer.layers['mask'].data
-        stack = []
-        for n, name in enumerate(namelist):
+#         stack = []
+#         for n, name in enumerate(namelist[1:]):
             
+#             data = viewer.layers[name].data
+
+#             data = np.expand_dims(data, axis=-1)
+#             stack.append(data)
+#             print(data)
+
+#             for sample in data:
+#                 x1 = int(sample[0][1])
+#                 y1 = int(sample[0][0])
+#                 x2 = int(sample[2][1])
+#                 y2 = int(sample[2][0])
+
+#                 try:
+#                     rps = regionprops(mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
+#                 except:
+#                     print(sample)
+#                     print(mask.shape)
+#                     continue
+
+#                 areas = []
+#                 for rp in rps:
+#                     areas.append(rp.area)
+
+#                 sortidx = np.argsort(areas)
+
+#                 mask[:,:,-2][mask[:,:,0] == rps[sortidx[0]].label] = np.max(mask[:,:,-2]) + 1
+#                 mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
+                
+                
+        dic = {'category_id':[], 'x1':[], 'y1':[], 'x2':[], 'y2':[]}
+
+        for n, name in enumerate(namelist[1:]):
             data = viewer.layers[name].data
 
-            data = np.expand_dims(data, axis=-1)
-            stack.append(data)
+        for sample in data:
+            dic['category_id'].append(n+1)
+            dic['x1'].append(sample[0][1])
+            dic['y1'].append(sample[0][0])
+            dic['x2'].append(sample[2][1])
+            dic['y2'].append(sample[2][0])
 
-            for sample in data:
-                x1 = int(sample[0][1])
-                y1 = int(sample[0][0])
-                x2 = int(sample[2][1])
-                y2 = int(sample[2][0])
-
-                try:
-                    rps = regionprops(mask[:,:,0][min(y1,y2):max(y1,y2), min(x1,x2):max(x1,x2)])
-                except:
-                    print(sample)
-                    print(mask.shape)
-                    continue
-
-                areas = []
-                for rp in rps:
-                    areas.append(rp.area)
-
-                sortidx = np.argsort(areas)
-
-                mask[:,:,-2][mask[:,:,0] == rps[sortidx[0]].label] = np.max(mask[:,:,-2]) + 1
-                mask[:,:,-1][mask[:,:,0] == rps[sortidx[1]].label] = np.max(mask[:,:,-1]) + 1
+        df = pd.DataFrame(dic)
+        df.to_csv(os.path.splitext(imglist[counter-1])[0] + '_corrected.csv')
 
         imsave(imglist[counter].replace('.tif', '_mask.tif'), mask)
 
@@ -99,14 +116,14 @@ def save_labels():
         mask = viewer.layers['mask'].data
 
         things = []
-        for cls, name in enumerate(namelist):
+        for cls, name in enumerate(namelist[1:]):
             data = viewer.layers[name].data
 
             for sample in data:
                 samplelist = list(sample)
                 samplelist = [list(x) for x in samplelist]
 
-                thing = {'points': samplelist, 'class': cls}
+                thing = {'points': samplelist, 'class': cls+1}
                 things.append(thing)
 
         tmpres = {'things': things}
@@ -124,26 +141,12 @@ def label_image():
     global boxes
             
     image = imread(imglist[counter])
-    mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
     print(imglist[counter])
     
-    try:
-        prelabels = []
-        for n in range(len(namelist)):
-            prelabels.append([])
-        with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
-            jsonfile = json.load(file)
-        for n in range(len(namelist)):
-            for thing in jsonfile['things']:            
-                if thing['class'] == n:
-                    prelabels[n].append(thing['points'])
-        for n in range(len(prelabels)):
-            if prelabels[n] == []:
-                prelabels[n] = None
-
-    except:
-        print('no json file found')
-    
+    prelabels = []
+    for n in range(len(namelist)):
+        prelabels.append([])
+        
     try:
         mask = imread(imglist[counter].replace('.tif', '_mask.tif'))
     except:
@@ -157,10 +160,50 @@ def label_image():
     viewer.add_labels(mask[:,:], opacity=0.3, name='mask', visible=True)
     
     if boxes:
-        for n in range(class_n):
-            viewer.add_shapes(None, shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+        try:
+            targets = pd.read_csv(os.path.splitext(imglist[counter])[0] + '_corrected.csv')
+
+            labels = []
+            boxes = []
+
+            for row in targets.itertuples():
+                boxes.append([row.x1, row.y1, row.x2, row.y2])
+                labels.append(row.category_id)
+
+            for n,box in enumerate(boxes):
+                prelabels[labels[n]-1].append([[box[1], box[0]], [box[3], box[0]], [box[3], box[2]], [box[1], box[2]]])
+
+            for n in range(len(prelabels)):
+                if prelabels[n] == []:
+                    prelabels[n] = None
+                    
+            print(prelabels)
+
+            for n in range(len(namelist)):
+                viewer.add_shapes(prelabels[n], shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+
+        except:
+            for n in range(len(namelist)):
+                viewer.add_shapes(None, shape_type='rectangle', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
+            print('no csv file found')
     else:
-        for n in range(class_n):
+        try:
+            with open(imglist[counter].replace('.tif', '_detections.json'), 'r') as file:
+                jsonfile = json.load(file)
+            for n in range(len(namelist)):
+                for thing in jsonfile['things']:            
+                    if thing['class'] == n:
+                        prelabels[n].append(thing['points'])
+            for n in range(len(prelabels)):
+                if prelabels[n] == []:
+                    prelabels[n] = None
+
+        except:
+            for n in range(len(prelabels)):
+                if prelabels[n] == []:
+                    prelabels[n] = None
+            print('no json file found')
+        for n in range(len(namelist)):
             viewer.add_shapes(prelabels[n], shape_type='path', edge_width=5, opacity=0.5, name=namelist[n], visible=True)
             
     viewer.layers.selection.active = viewer.layers[-1]
