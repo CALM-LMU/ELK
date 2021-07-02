@@ -66,7 +66,7 @@ def save_labels():
         
         print(namelist)
 
-        for n, name in enumerate(namelist[1:]):
+        for n, name in enumerate(namelist):
             data = viewer.layers[name].data
 
             for sample in data:
@@ -86,14 +86,14 @@ def save_labels():
         mask = viewer.layers['mask'].data
 
         things = []
-        for cls, name in enumerate(namelist[1:]):
+        for cls, name in enumerate(namelist):
             data = viewer.layers[name].data
 
             for sample in data:
                 samplelist = list(sample)
                 samplelist = [list(x) for x in samplelist]
 
-                thing = {'points': samplelist, 'class': cls+1}
+                thing = {'points': samplelist, 'class': cls}
                 things.append(thing)
 
         tmpres = {'things': things}
